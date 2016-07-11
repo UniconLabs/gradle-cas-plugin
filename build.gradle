@@ -1,4 +1,9 @@
-apply plugin: 'groovy'
+plugins {
+    id "groovy"
+    id "com.jfrog.bintray" version "1.7"
+    id "signing"
+    id "maven"
+}
 
 repositories {
     jcenter()
@@ -13,4 +18,43 @@ dependencies {
 
 task wrapper(type: Wrapper) {
     gradleVersion = 2.13
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = "javadoc"
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = "sources"
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+bintray {
+    user = bintrayUsername
+    key = bintrayAPIKey
+
+    configurations = ['archives']
+
+    pkg {
+        repo = 'maven'
+        name = project.name
+        userOrg = 'uniconiam'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/UniconLabs/gradle-cas-plugin'
+
+        version {
+            name = project.version
+        }
+    }
 }
