@@ -4,7 +4,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.jose4j.jwk.JsonWebKey
 import org.jose4j.jwk.OctJwkGenerator
-import org.springframework.boot.gradle.SpringBootPlugin
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -29,6 +29,7 @@ class CasPlugin implements Plugin<Project> {
         if (!project.plugins.hasPlugin(SpringBootPlugin)) {
             project.apply plugin: SpringBootPlugin
         }
+        project.apply from: 'https://raw.githubusercontent.com/apereo/cas/master/gradle/overrides.gradle'
 
         project.extensions.create('cas', CasPluginExtension)
         project.repositories {
@@ -51,13 +52,36 @@ class CasPlugin implements Plugin<Project> {
             println "CAS features enabled: ${project.cas.features}"
             project.dependencies {
                 //This dependency contains main Boot CasWebApplication
-                compile("org.apereo.cas:cas-server-webapp-init:${project.cas.version}")
+                compile("org.apereo.cas:cas-server-webapp-init:${project.cas.version}") {
+                    transitive = true
+                    changing = true
+                }
 
                 compile("org.apereo.cas:cas-server-webapp:${project.cas.version}:resources") {
                     transitive = true
+                    changing = true
                 }
+                compile("org.springframework.boot:spring-boot-starter-tomcat:1.4.1.RELEASE")
+                compile("org.apache.tomcat.embed:tomcat-embed-jasper:8.5.5")
                 project.cas.features.each {
-                    compile("org.apereo.cas:cas-server-support-${it}:${project.cas.version}")
+                    compile("org.apereo.cas:cas-server-support-${it}:${project.cas.version}") {
+                        transitive = true
+                        changing = true
+                    }
+                }
+            }
+
+            project.with {
+                bootRun {
+                    addResources = true
+                }
+
+                springBoot {
+                    mainClass = 'org.apereo.cas.web.CasWebApplication'
+                }
+
+                bootRepackage {
+                    mainClass = 'org.apereo.cas.web.CasWebApplication'
                 }
             }
         }
